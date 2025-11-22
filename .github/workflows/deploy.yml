@@ -1,4 +1,4 @@
-name: Deploy to Server
+name: deploy
 
 on:
   push:
@@ -10,27 +10,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Copy files to server via SCP
+      - name: Remove Git and workflow files
+        run: |
+          rm -rf .git
+          rm -rf .github
+          rm -rf "de mi PC"
+
+      - name: Deploy via SCP
         uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.SERVERPI }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          source: "./"
-          target: "/var/www/html"
-
-      - name: Run commands on server
-        uses: appleboy/ssh-action@v0.1.6
-        with:
-          host: ${{ secrets.SERVERPI }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            sudo chmod -R 755 /var/www/html
-            sudo chown -R apache:apache /var/www/html || true
+          source: "./*"
+          target: "/var/www/html/"
+          overwrite: true
 
