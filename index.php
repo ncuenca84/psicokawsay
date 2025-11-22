@@ -24,7 +24,7 @@ echo "<!DOCTYPE html>
 <body>
     <div class='box'>
         <h1>🚧 Página en construcción 🚧</h1>
-        <p>Test deploy</p>
+        <p>Test deploy2</p>
     </div>
 </body>
 </html>";
