@@ -23,8 +23,8 @@ echo "<!DOCTYPE html>
 </head>
 <body>
     <div class='box'>
-        <h1>🚧 Página en construcción 🚧</h1>
-        <p>Test deploy v3</p>
+        <h1>🚧 Página Web en construcción 🚧</h1>
+        <p>Volveremos Pronto</p>
     </div>
 </body>
 </html>";
