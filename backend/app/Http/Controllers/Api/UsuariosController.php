@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Usuarios;
+use App\Helpers\ApiResponse;
 use Illuminate\Http\Request;
 
 class UsuariosController extends Controller
@@ -16,11 +17,13 @@ class UsuariosController extends Controller
     {
         $usuarios = Usuarios::all();
 
-        return response()->json([
-            'status' => 'success',
-            'total' => $usuarios->count(),
-            'data' => $usuarios
-        ]);
+        return ApiResponse::success(
+            [
+                'total' => $usuarios->count(),
+                'usuarios' => $usuarios
+            ],
+            'Lista de usuarios obtenida correctamente'
+        );
     }
 
     /**
@@ -29,18 +32,17 @@ class UsuariosController extends Controller
      */
     public function show($id)
     {
+        // Validación simple
+        if (!is_numeric($id)) {
+            return ApiResponse::error('ID inválido', 422);
+        }
+
         $usuario = Usuarios::find($id);
 
         if (!$usuario) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Usuario no encontrado'
-            ], 404);
+            return ApiResponse::error('Usuario no encontrado', 404);
         }
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $usuario
-        ]);
+        return ApiResponse::success($usuario, 'Usuario encontrado');
     }
 }
