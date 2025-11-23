@@ -10,21 +10,49 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    # 1. Descargar código desde GitHub
     - name: Checkout
       uses: actions/checkout@v3
 
-    - name: Deploy backend folder
+    # 2. Crear paquete sin vendor, storage y sin .env
+    - name: Prepare backend package
+      run: |
+        mkdir deploy
+        rsync -av \
+          --exclude="vendor" \
+          --exclude="storage" \
+          --exclude=".env" \
+          --exclude=".git" \
+          --exclude=".github" \
+          backend/ deploy/
+
+    # 3. Crear backup automático en el servidor
+    - name: Create backup on server
+      uses: appleboy/ssh-action@v0.1.6
+      with:
+        host: ${{ secrets.SERVERPI }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_KEY }}
+        port: ${{ secrets.SSH_PORT }}
+        script: |
+          BACKUP_DIR="/var/www/html/backend-backup-$(date +'%Y%m%d%H%M%S')"
+          cp -r /var/www/html/backend "$BACKUP_DIR"
+          echo "Backup guardado en: $BACKUP_DIR"
+
+    # 4. Subir archivos (solo código)
+    - name: Upload backend to server
       uses: appleboy/scp-action@v0.1.4
       with:
         host: ${{ secrets.SERVERPI }}
         username: ${{ secrets.SSH_USER }}
         key: ${{ secrets.SSH_KEY }}
         port: ${{ secrets.SSH_PORT }}
-        source: "backend/**"
+        source: "deploy/**"
         target: "/var/www/html/backend"
         strip_components: 1
         overwrite: true
 
+    # 5. Comandos post-deploy
     - name: Run Laravel commands
       uses: appleboy/ssh-action@v0.1.6
       with:
@@ -34,7 +62,27 @@ jobs:
         port: ${{ secrets.SSH_PORT }}
         script: |
           cd /var/www/html/backend
-          composer install --no-interaction --prefer-dist
+          
+          # Si vendor no existe → instalar
+          if [ ! -d "vendor" ]; then
+            echo "Vendor no encontrado. Ejecutando composer install."
+            composer install --no-interaction --prefer-dist --optimize-autoloader
+          else
+            echo "Vendor encontrado. Ejecutando composer update --no-dev."
+            composer update --no-dev
+          fi
+
+          # Migraciones seguras
           php artisan migrate --force
+
+          # Optimizar Laravel
           php artisan optimize:clear
+          php artisan optimize
+
+          # Recargar Apache
           systemctl reload httpd
+
+    # 6. Notificación opcional si falla
+    - name: Notify failure
+      if: failure()
+      run: echo "Deploy falló para Psicokawsay Backend"
