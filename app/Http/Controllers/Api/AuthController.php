@@ -1,5 +1,5 @@
 <?php
-// Fix despliegue
+// test de sinconizacion
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
