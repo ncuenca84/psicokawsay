@@ -24,18 +24,6 @@ jobs:
           --exclude=".github" \
           ./ deploy/
 
-    - name: Create backup on server
-      uses: appleboy/ssh-action@v0.1.6
-      with:
-        host: ${{ secrets.SERVERPI }}
-        username: ${{ secrets.SSH_USER }}
-        key: ${{ secrets.SSH_KEY }}
-        port: ${{ secrets.SSH_PORT }}
-        script: |
-          BACKUP_DIR="/var/www/html/backend-backup-$(date +'%Y%m%d%H%M%S')"
-          cp -r /var/www/html/backend "$BACKUP_DIR"
-          echo "Backup guardado en: $BACKUP_DIR"
-
     - name: Upload backend to server
       uses: appleboy/scp-action@v0.1.4
       with:
@@ -44,8 +32,8 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         port: ${{ secrets.SSH_PORT }}
         source: "deploy/**"
-        target: "/var/www/html/backend"
-        strip_components: 0
+        target: "/var/www/html/backend/"
+        strip_components: 1
         overwrite: true
 
     - name: Run Laravel commands
@@ -60,6 +48,4 @@ jobs:
           composer install --no-interaction --prefer-dist --optimize-autoloader
           php artisan migrate --force
           php artisan optimize:clear
-          php artisan optimize
           systemctl reload httpd
-
